@@ -15,6 +15,7 @@
     "sst": "3.0.131"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.645.0",
     "@aws-sdk/client-sfn": "^3.645.0",
     "@pulumi/aws": "^6.51.0",
     "@pulumi/pulumi": "^3.131.0",

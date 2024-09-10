@@ -130,7 +130,7 @@ export default $config({
     const standardStateMachine = createStateMachine('STANDARD');
 
     const starter = new Function('api', {
-      handler: 'lambda/starter.handler',
+      handler: 'lambda/api.handler',
       url: true,
       environment: {
         EXPRESS_STATE_MACHINE_ARN: expressStateMachine.arn,
@@ -138,8 +138,12 @@ export default $config({
       },
       permissions: [
         {
-          actions: ['states:StartExecution', 'states:DescribeExecution'],
+          actions: ['states:StartExecution', 'states:DescribeExecution', 'states:ListExecutions'],
           resources: [expressStateMachine.arn, standardStateMachine.arn],
+        },
+        {
+          actions: ['logs:FilterLogEvents', 'logs:StartQuery', 'logs:GetQueryResults'],
+          resources: ['*'],
         },
       ],
     });

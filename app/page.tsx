@@ -2,10 +2,11 @@
 
 const apiUrl = process.env.NEXT_PUBLIC_LAMBDA_URL!;
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const [result, setResult] = useState<string | null>(null);
+  const [expressResult, setExpressResult] = useState<string | null>(null);
+  const [standardResult, setStandardResult] = useState<string | null>(null);
 
   const invokeStateMachine = async (type: 'EXPRESS' | 'STANDARD') => {
     console.log(`Invoking State Machine: ${type}`);
@@ -15,15 +16,58 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ stateMachine: type }),
+        body: JSON.stringify({
+          cmd: 'start',
+          stateMachine: type,
+        }),
       });
       const data = await response.json();
-      setResult(JSON.stringify(data, null, 2));
+      if (type === 'EXPRESS') {
+        setExpressResult(JSON.stringify(data, null, 2));
+      } else {
+        setStandardResult(JSON.stringify(data, null, 2));
+      }
     } catch (error) {
       console.error('Error invoking state machine:', error);
-      setResult('Error invoking state machine');
+      if (type === 'EXPRESS') {
+        setExpressResult('Error invoking state machine');
+      } else {
+        setStandardResult('Error invoking state machine');
+      }
     }
   };
+
+  const pollStateMachine = async (type: 'EXPRESS' | 'STANDARD') => {
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cmd: 'list',
+          stateMachine: type,
+        }),
+      });
+      const data = await response.json();
+      if (type === 'EXPRESS') {
+        setExpressResult(JSON.stringify(data, null, 2));
+      } else {
+        setStandardResult(JSON.stringify(data, null, 2));
+      }
+    } catch (error) {
+      console.error('Error polling state machine:', error);
+    }
+  };
+
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      pollStateMachine('EXPRESS');
+      pollStateMachine('STANDARD');
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, []);
 
   return (
     <div className="p-4">
@@ -42,11 +86,24 @@ export default function Home() {
           Invoke STANDARD
         </button>
       </div>
-      {result && (
-        <pre className="p-4 rounded">
-          <code>{result}</code>
-        </pre>
-      )}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h2 className="text-xl font-bold mb-2">EXPRESS Results</h2>
+          {expressResult && (
+            <pre className="p-4 rounded">
+              <code>{expressResult}</code>
+            </pre>
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-bold mb-2">STANDARD Results</h2>
+          {standardResult && (
+            <pre className="p-4 rounded">
+              <code>{standardResult}</code>
+            </pre>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
