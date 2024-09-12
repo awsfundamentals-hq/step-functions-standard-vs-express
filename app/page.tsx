@@ -169,7 +169,8 @@ export default function Home() {
         </div>
       )}
       <p className="text-sm text-gray-600 mb-6 max-w-2xl text-center leading-relaxed">
-        Note: Results for Express executions are queried via Log Insights and may take some time to display. The UI refreshes every 5 seconds.
+        Note: Results for Express executions are queried via <b className='text-[#EE417E]'>Log Insights</b> and may take some time to display.
+        The UI refreshes every 5 seconds.
       </p>
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 relative">
         {isPolling && (
