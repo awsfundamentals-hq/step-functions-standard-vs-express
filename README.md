@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AWS Step Functions Performance Comparison
+
+This repository contains a simple performance comparison between Express and Standard AWS Step Functions.
+
+## Overview
+
+The purpose of this project is to demonstrate and analyze the performance differences between Express and Standard Step Functions in AWS. It provides a straightforward way to invoke both types of state machines and visualize their execution times.
+
+![Step Functions Comparison](docs/step-functions.gif)
+
+## Features
+
+- Invokes both Express and Standard Step Functions
+- Collects execution duration data
+- Displays results in a bar chart for easy comparison
+- Automatically refreshes data every 5 seconds
+
+## Technical Details
+
+This project is built using:
+- Next.js for the frontend
+- AWS Lambda for backend operations
+- AWS Step Functions (both Express and Standard types)
+- Chart.js for data visualization
+- SST (Serverless Stack) for local development and deployment
 
 ## Getting Started
 
-First, run the development server:
+1. Clone this repository
+2. Install dependencies with `pnpm install`
+3. Ensure you have AWS credentials configured on your machine
+4. Start the local development environment with `npx sst dev`
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Note
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The results for Express executions are queried via AWS CloudWatch Log Insights and may take some time to display due to potential delays in log processing.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+SST Ion allows you to develop and test your serverless application locally, providing a seamless experience between local development and AWS deployment.
