@@ -1,13 +1,32 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const apiUrl = process.env.NEXT_PUBLIC_LAMBDA_URL!;
 
-import { useState, useEffect } from 'react';
-
 export default function Home() {
-  const [results, setResults] = useState<{ express: string | null; standard: string | null }>({
-    express: null,
-    standard: null,
+  const [results, setResults] = useState<{ express: number[]; standard: number[] }>({
+    express: [],
+    standard: [],
   });
 
   const invokeStateMachines = async () => {
@@ -23,16 +42,10 @@ export default function Home() {
         }),
       });
       const data = await response.json();
-      setResults({
-        express: JSON.stringify(data, null, 2),
-        standard: JSON.stringify(data, null, 2),
-      });
+      // After invoking, immediately poll for results
+      pollStateMachines();
     } catch (error) {
       console.error('Error invoking state machines:', error);
-      setResults({
-        express: 'Error invoking state machines',
-        standard: 'Error invoking state machines',
-      });
     }
   };
 
@@ -49,8 +62,8 @@ export default function Home() {
       });
       const data = await response.json();
       setResults({
-        express: JSON.stringify({ durationsExpress: data.durationsExpress }, null, 2),
-        standard: JSON.stringify({ durationsStandard: data.durationsStandard }, null, 2),
+        express: data.durationsExpress || [],
+        standard: data.durationsStandard || [],
       });
     } catch (error) {
       console.error('Error polling state machines:', error);
@@ -65,34 +78,61 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, []);
 
+  const chartData = {
+    labels: results.express.map((_, index) => `Execution ${index + 1}`),
+    datasets: [
+      {
+        label: 'EXPRESS',
+        data: results.express,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: 'STANDARD',
+        data: results.standard,
+        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'State Machine Execution Durations',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Duration (ms)',
+        },
+      },
+    },
+  };
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Step Functions Example</h1>
-      <div className="space-x-4 mb-4">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Step Functions Comparison</h1>
+      <div className="w-full max-w-4xl mb-8">
         <button
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+          className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
           onClick={invokeStateMachines}
         >
           Invoke Both State Machines
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h2 className="text-xl font-bold mb-2">EXPRESS Results</h2>
-          {results.express && (
-            <pre className="p-4 rounded">
-              <code>{results.express}</code>
-            </pre>
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-bold mb-2">STANDARD Results</h2>
-          {results.standard && (
-            <pre className="p-4 rounded">
-              <code>{results.standard}</code>
-            </pre>
-          )}
-        </div>
+      <div className="w-full max-w-4xl bg-white rounded-lg shadow-xl p-6">
+        <Bar data={chartData} options={chartOptions} />
       </div>
     </div>
   );
