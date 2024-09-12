@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
+import Image from 'next/image';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,12 +31,11 @@ export default function Home() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const invokeStateMachines = async () => {
     console.log('Invoking both State Machines');
     setIsLoading(true);
-    setSuccessMessage('');
     try {
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -47,7 +47,8 @@ export default function Home() {
         }),
       });
       const data = await response.json();
-      setSuccessMessage('State machines have been successfully invoked!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000); // Hide toast after 3 seconds
       // After invoking, immediately poll for results
       pollStateMachines();
     } catch (error) {
@@ -82,6 +83,9 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Initial poll when the page loads
+    pollStateMachines();
+
     const pollInterval = setInterval(() => {
       pollStateMachines();
     }, 5000);
@@ -142,7 +146,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-extrabold mb-8 text-gray-800 tracking-tight">Step Functions Comparison</h1>
+      <Image 
+        src="/images/step-functions.svg" 
+        alt="Step Functions Logo" 
+        width={80} 
+        height={80} 
+        className="mb-4 rounded-full shadow-md"
+      />
+      <h1 className="text-4xl font-extrabold mb-8 text-[#EE417E] tracking-tight">Step Functions Comparison</h1>
       <div className="w-full max-w-3xl mb-8">
         <button
           className={`w-full ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-102 shadow-md`}
@@ -152,9 +163,9 @@ export default function Home() {
           {isLoading ? 'Invoking...' : 'Invoke Both State Machines'}
         </button>
       </div>
-      {successMessage && (
-        <div className="w-full max-w-3xl mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{successMessage}</span>
+      {showToast && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300">
+          State machines have been successfully invoked!
         </div>
       )}
       <p className="text-sm text-gray-600 mb-6 max-w-2xl text-center leading-relaxed">
@@ -162,14 +173,14 @@ export default function Home() {
       </p>
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 relative">
         {isPolling && (
-          <div className="absolute top-2 right-2 flex items-center space-x-2 bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
             <span>Updating...</span>
           </div>
         )}
         <div className="mb-4 flex justify-between text-sm font-medium">
-          <span className="text-blue-600">EXPRESS Average: {expressAverage} ms</span>
-          <span className="text-purple-600">STANDARD Average: {standardAverage} ms</span>
+          <span className="text-blue-600"><strong>EXPRESS</strong> ø: {expressAverage} ms</span>
+          <span className="text-purple-600"><strong>STANDARD</strong> ø: {standardAverage} ms</span>
         </div>
         <Bar data={chartData} options={chartOptions} />
       </div>
