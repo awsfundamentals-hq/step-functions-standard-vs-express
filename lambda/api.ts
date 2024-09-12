@@ -52,25 +52,15 @@ async function getExpressDurations(): Promise<number[]> {
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const payload = JSON.parse(event.body || '{}');
-  const stateMachineType = payload.stateMachine;
   const cmd = payload.cmd;
 
-  if (stateMachineType !== 'EXPRESS' && stateMachineType !== 'STANDARD') {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: 'Invalid stateMachine type. Must be EXPRESS or STANDARD.' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-  }
+  const expressStateMachineArn = process.env.EXPRESS_STATE_MACHINE_ARN;
+  const standardStateMachineArn = process.env.STANDARD_STATE_MACHINE_ARN;
 
-  const stateMachineArn = process.env[`${stateMachineType}_STATE_MACHINE_ARN`];
-
-  if (!stateMachineArn) {
+  if (!expressStateMachineArn || !standardStateMachineArn) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'State machine ARN not found in environment variables.' }),
+      body: JSON.stringify({ message: 'State machine ARNs not found in environment variables.' }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -79,49 +69,56 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
   try {
     if (cmd === 'start') {
-      const startExecutionCommand = new StartExecutionCommand({
-        stateMachineArn,
+      const startExpressExecutionCommand = new StartExecutionCommand({
+        stateMachineArn: expressStateMachineArn,
         input: JSON.stringify(payload),
       });
 
-      console.info(`State machine started`);
+      const startStandardExecutionCommand = new StartExecutionCommand({
+        stateMachineArn: standardStateMachineArn,
+        input: JSON.stringify(payload),
+      });
 
-      const { executionArn } = await sfnClient.send(startExecutionCommand);
+      console.info(`Both state machines started`);
+
+      const [expressExecution, standardExecution] = await Promise.all([
+        sfnClient.send(startExpressExecutionCommand),
+        sfnClient.send(startStandardExecutionCommand),
+      ]);
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: 'State machine has started its execution',
-          executionArn,
+          message: 'Both state machines have started their executions',
+          expressExecutionArn: expressExecution.executionArn,
+          standardExecutionArn: standardExecution.executionArn,
         }),
         headers: {
           'Content-Type': 'application/json',
         },
       };
     } else if (cmd === 'list') {
-      let durations: number[] = [];
-      if (stateMachineType === 'EXPRESS') {
-        durations = await getExpressDurations();
-      } else {
-        const listExecutionsCommand = new ListExecutionsCommand({
-          stateMachineArn,
-          maxResults: 10,
-        });
+      const expressDurations = await getExpressDurations();
 
-        const { executions } = await sfnClient.send(listExecutionsCommand);
+      const listStandardExecutionsCommand = new ListExecutionsCommand({
+        stateMachineArn: standardStateMachineArn,
+        maxResults: 10,
+      });
 
-        durations = executions.map((execution: any) => {
-          const startDate = new Date(execution.startDate);
-          const stopDate = execution.stopDate ? new Date(execution.stopDate) : new Date();
-          return stopDate.getTime() - startDate.getTime();
-        });
-      }
+      const { executions } = await sfnClient.send(listStandardExecutionsCommand);
+
+      const standardDurations = executions.map((execution: any) => {
+        const startDate = new Date(execution.startDate);
+        const stopDate = execution.stopDate ? new Date(execution.stopDate) : new Date();
+        return stopDate.getTime() - startDate.getTime();
+      });
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: 'Last 10 execution durations retrieved',
-          durations,
+          message: 'Last 10 execution durations retrieved for both state machines',
+          durationsExpress: expressDurations,
+          durationsStandard: standardDurations,
         }),
         headers: {
           'Content-Type': 'application/json',
