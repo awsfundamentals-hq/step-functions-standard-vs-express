@@ -36,4 +36,4 @@ This project is built using:
 
 The results for Express executions are queried via AWS CloudWatch Log Insights and may take some time to display due to potential delays in log processing.
 
-[SST Ion](https://github.com/sst/ion) allows you to develop and test your serverless application locally, providing a seamless experience between local development and AWS deployment.
+[SST V3](https://github.com/sst/ion) allows you to develop and test your serverless application locally, providing a seamless experience between local development and AWS deployment.
