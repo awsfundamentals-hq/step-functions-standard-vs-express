@@ -1,11 +1,9 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
 import * as aws from '@pulumi/aws';
-import { Function } from './.sst/platform/src/components/aws/function';
-import { Nextjs } from './.sst/platform/src/components/aws/nextjs';
 
 const createStateMachine = (type: 'EXPRESS' | 'STANDARD') => {
-  const lambdaFunction = new Function(`stateMachineLambda-${type.toLowerCase()}`, {
+  const lambdaFunction = new sst.aws.Function(`stateMachineLambda-${type.toLowerCase()}`, {
     handler: 'lambda/step-function.handler',
   });
 
@@ -129,7 +127,7 @@ export default $config({
     const expressStateMachine = createStateMachine('EXPRESS');
     const standardStateMachine = createStateMachine('STANDARD');
 
-    const starter = new Function('api', {
+    const starter = new sst.aws.Function('api', {
       handler: 'lambda/api.handler',
       url: true,
       environment: {
@@ -148,7 +146,7 @@ export default $config({
       ],
     });
 
-    const frontend = new Nextjs('frontend', {
+    const frontend = new sst.aws.Nextjs('frontend', {
       environment: {
         NEXT_PUBLIC_LAMBDA_URL: starter.url,
       },
